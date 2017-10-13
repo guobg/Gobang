@@ -8,8 +8,8 @@ import {
 } from 'react-native';
 
 const {width} = Dimensions.get('window');
-const lineCount = 11;
-const unitWidth = Math.floor((width - 40) / (lineCount * 2)) * 2;
+const lineCount = 15;
+const unitWidth = Math.floor((width - 10) / (lineCount * 2)) * 2;
 const panelSize = unitWidth * lineCount + unitWidth;
 const pieceSize = Math.floor(unitWidth * 0.9);
 const pieceRadius = Math.floor(pieceSize / 2);
