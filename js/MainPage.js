@@ -7,21 +7,24 @@ import {
     TouchableWithoutFeedback,
     Alert,
     TouchableOpacity,
-    Text
+    Text,
+    Image
 } from 'react-native';
 import {lineCount} from './BasicData';
 import {wins, winCount} from './Wins';
+import Sound from 'react-native-sound';
 
+const column = lineCount - 1;
 const {width} = Dimensions.get('window');
-const unitWidth = Math.floor((width - 10) / (lineCount * 2)) * 2;
-const panelSize = unitWidth * lineCount + unitWidth;
+const unitWidth = Math.floor((width - 20) / (column * 2)) * 2;
+const panelSize = unitWidth * (column) + unitWidth;
 const pieceSize = Math.floor(unitWidth * 0.9);
 const pieceRadius = Math.floor(pieceSize / 2);
 const margin = unitWidth / 2;
 
 const path = ART.Path();
 
-for (let i = 0; i <= lineCount; i++) {
+for (let i = 0; i < lineCount; i++) {
     path.moveTo(margin + i * unitWidth, margin);
     path.lineTo(margin + i * unitWidth, panelSize - margin);
     path.moveTo(margin, margin + i * unitWidth);
@@ -34,10 +37,38 @@ export default class MainPage extends Component {
         super(props);
         this.state = {
             blackChess: [],
-            whiteChess: []
+            whiteChess: [],
+            lastChess: []
         };
         this.initData();
+        this.setSound();
     }
+
+    componentWillUnmount() {
+        /*if (this.bgm) {
+            this.bgm.stop(() => {
+                this.bgm.release();
+            });
+        }*/
+        this.chess && this.chess.release();
+        this.win && this.win.release();
+    }
+
+    setSound = () => {
+        /*this.bgm = new Sound('bgm.mp3', Sound.MAIN_BUNDLE, (error) => {
+            if (error) {
+                console.log('failed to load the sound', error);
+                return;
+            }
+            this.bgm.setNumberOfLoops(-1);
+            // loaded successfully
+            this.bgm.play();
+        });*/
+
+        this.chess = new Sound('chess.wav', Sound.MAIN_BUNDLE);
+
+        this.win = new Sound('win.wav', Sound.MAIN_BUNDLE);
+    };
 
     initData = () => {
         this.isBlack = true;
@@ -69,6 +100,16 @@ export default class MainPage extends Component {
         return chess;
     };
 
+    getLastChess = (item) => {
+        const chess = ART.Path();
+        if (item.length === 0) return chess;
+        chess.moveTo(margin + item[0] * unitWidth, margin + item[1] * unitWidth - pieceRadius);
+        chess.arc(0, pieceSize, pieceRadius);
+        chess.arc(0, -pieceSize, pieceRadius);
+        chess.close();
+        return chess;
+    };
+
     handleChess = (event) => {
         if (this.isOver || !this.isBlack) return;
         let tempChess = this.state.blackChess;
@@ -78,9 +119,11 @@ export default class MainPage extends Component {
             return;
         }
         tempChess.push([x, y]);
+        this.chess && this.chess.play();
         this.chessBoard[x][y] = 2;
         this.setState({
-            blackChess: tempChess
+            blackChess: tempChess,
+            lastChess: [x, y]
         });
 
         for (let i = 0; i < winCount; i++) {
@@ -88,6 +131,7 @@ export default class MainPage extends Component {
                 this.myWin[i]++;
                 this.computerWin[i] = 6;
                 if (this.myWin[i] === 5) {
+                    this.win && this.win.play();
                     Alert.alert('Black Win');
                     this.isOver = true;
                 }
@@ -167,15 +211,18 @@ export default class MainPage extends Component {
 
         let tempChess = this.state.whiteChess;
         tempChess.push([u, v]);
+        this.chess && this.chess.play();
         this.chessBoard[u][v] = 2;
         this.setState({
-            whiteChess: tempChess
+            whiteChess: tempChess,
+            lastChess: [u, v]
         });
         for (let i = 0; i < winCount; i++) {
             if (wins[u][v][i]) {
                 this.computerWin[i]++;
                 this.myWin[i] = 6;
                 if (this.computerWin[i] === 5) {
+                    this.win && this.win.play();
                     Alert.alert('White Win');
                     this.isOver = true;
                 }
@@ -190,28 +237,34 @@ export default class MainPage extends Component {
     _reset = () => {
         this.setState({
             blackChess: [],
-            whiteChess: []
+            whiteChess: [],
+            lastChess: []
         });
         this.initData();
     };
 
     render() {
-        const {blackChess, whiteChess} = this.state;
+        const {blackChess, whiteChess, lastChess} = this.state;
 
         const allBlackChess = this.getChess(blackChess);
         const allWhiteChess = this.getChess(whiteChess);
+        const lastOneChess = this.getLastChess(lastChess);
 
         return (
             <View style={styles.canvasPanel}>
-                <TouchableWithoutFeedback onPress={(event) => this.handleChess(event)}>
-                    <View>
-                        <ART.Surface width={panelSize} height={panelSize}>
-                            <ART.Shape d={path} stroke="#bfbfbf" strokeWidth={1}/>
-                            <ART.Shape d={allBlackChess} stroke="#bfbfbf" fill="#000000" strokeWidth={1}/>
-                            <ART.Shape d={allWhiteChess} stroke="#bfbfbf" fill="#ffffff" strokeWidth={1}/>
-                        </ART.Surface>
-                    </View>
-                </TouchableWithoutFeedback>
+                <Image style={styles.bgImage}
+                       source={require('../res/bgi.png')}>
+                    <TouchableWithoutFeedback onPress={(event) => this.handleChess(event)}>
+                        <View>
+                            <ART.Surface width={panelSize} height={panelSize}>
+                                <ART.Shape d={path} stroke="#bfbfbf" strokeWidth={1}/>
+                                <ART.Shape d={allBlackChess} fill="#000000" strokeWidth={1}/>
+                                <ART.Shape d={allWhiteChess} fill="#ffffff" strokeWidth={1}/>
+                                <ART.Shape d={lastOneChess} stroke="#66cc33" strokeWidth={1}/>
+                            </ART.Surface>
+                        </View>
+                    </TouchableWithoutFeedback>
+                </Image>
                 <TouchableOpacity
                     style={styles.resetButton}
                     onPress={() => {
@@ -246,5 +299,13 @@ const styles = StyleSheet.create({
     resetText: {
         color: '#ffffff',
         fontSize: 17
+    },
+    bgImage: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        resizeMode: 'stretch',
+        width: width,
+        height: width
     },
 });
