@@ -52,6 +52,7 @@ export default class MainPage extends Component {
         }*/
         this.chess && this.chess.release();
         this.win && this.win.release();
+        this.loss && this.loss.release();
     }
 
     setSound = () => {
@@ -68,6 +69,8 @@ export default class MainPage extends Component {
         this.chess = new Sound('chess.wav', Sound.MAIN_BUNDLE);
 
         this.win = new Sound('win.wav', Sound.MAIN_BUNDLE);
+
+        this.loss = new Sound('loss.wav', Sound.MAIN_BUNDLE);
     };
 
     initData = () => {
@@ -222,7 +225,7 @@ export default class MainPage extends Component {
                 this.computerWin[i]++;
                 this.myWin[i] = 6;
                 if (this.computerWin[i] === 5) {
-                    this.win && this.win.play();
+                    this.loss && this.loss.play();
                     Alert.alert('White Win');
                     this.isOver = true;
                 }
